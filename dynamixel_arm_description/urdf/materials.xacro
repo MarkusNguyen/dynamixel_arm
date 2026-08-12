@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<robot name="dynamixel_arm" xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+<material name="silver_default">
+  <color rgba="0.700 0.700 0.700 1.000"/>
+</material>
+<material name="opaque235235235">
+  <color rgba="0.9215686274509803 0.9215686274509803 0.9215686274509803 1.0"/>
+</material>
+<material name="opaque545454">
+  <color rgba="0.21176470588235294 0.21176470588235294 0.21176470588235294 1.0"/>
+</material>
+<material name="opaque191191191">
+  <color rgba="0.7490196078431373 0.7490196078431373 0.7490196078431373 1.0"/>
+</material>
+
+</robot>
