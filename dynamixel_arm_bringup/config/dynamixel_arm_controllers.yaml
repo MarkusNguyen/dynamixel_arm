@@ -16,7 +16,7 @@ arm_controller:
       - joint3
       - joint4
       - joint5
-      - joint6
+      - gripper
 
     command_interfaces:
       - position

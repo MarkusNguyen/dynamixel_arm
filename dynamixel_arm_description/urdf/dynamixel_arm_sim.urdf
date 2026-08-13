@@ -460,61 +460,41 @@
     <mimic joint="gripper" multiplier="-1.0" offset="0.0"/>
   </joint>
   
-  <ros2_control name="RebotArmHardwareInterface" type="system">
+  <ros2_control name="DynamixelArmHardwareInterface" type="system">
     <hardware>
-        <plugin>dynamixel_hardware/DynamixelHardware</plugin>
-        <param name="port_name">/dev/ttyUSB0</param>
-        <param name="baud_rate">1000000</param>
+      <plugin>mujoco_ros2_control/MujocoSystemInterface</plugin>
+      <param name="mujoco_model">$(find dynamixel_arm_description)/mjcf/scene.xml</param>
     </hardware>
-
     <joint name="joint1">
-        <param name="id">1</param>
-        <param name="control_mode">position</param> 
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
-
     <joint name="joint2">
-        <param name="id">2</param>
-        <param name="control_mode">position</param> 
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
-    
     <joint name="joint3">
-        <param name="id">3</param>
-        <param name="control_mode">position</param> 
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
-
     <joint name="joint4">
-        <param name="id">4</param>
-        <param name="control_mode">position</param> 
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
-
     <joint name="joint5">
-        <param name="id">5</param>
-        <param name="control_mode">position</param> 
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
-
     <joint name="gripper">
-        <param name="id">6</param>
-        <param name="control_mode">position</param> 
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
-
   </ros2_control>
 
 </robot>

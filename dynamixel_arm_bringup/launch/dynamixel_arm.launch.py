@@ -10,6 +10,9 @@ def generate_launch_description():
     bringup_pkg_share = get_package_share_directory('dynamixel_arm_bringup')
     description_pkg_share = get_package_share_directory('dynamixel_arm_description')
 
+    rviz_config_path = os.path.join(description_pkg_share, 'config/display.rviz')
+
+
     # Path to controllers config YAML file
     controllers_config_path = os.path.join(
         bringup_pkg_share, 'config', 'dynamixel_arm_controllers.yaml'
@@ -58,9 +61,19 @@ def generate_launch_description():
         output='screen'
     )
 
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config_path],
+        parameters=[{'use_sim_time': False}]
+    )
+
     return LaunchDescription([
         robot_state_publisher_node,
         ros2_control_node,
         joint_state_broadcaster_spawner,
         arm_controller_spawner,
+        rviz_node,
     ])

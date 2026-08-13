@@ -21,7 +21,7 @@ find_package(urdf REQUIRED)
 ################################################################################
 # Install
 ################################################################################
-install(DIRECTORY meshes urdf launch config
+install(DIRECTORY meshes urdf launch config mjcf
   DESTINATION share/${PROJECT_NAME}
 )
 

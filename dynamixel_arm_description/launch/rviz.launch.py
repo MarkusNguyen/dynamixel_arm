@@ -7,7 +7,7 @@ from launch_ros.descriptions import ParameterValue
 def generate_launch_description():
     pkg_share = launch_ros.substitutions.FindPackageShare(package='dynamixel_arm_description').find('dynamixel_arm_description')
     
-    default_model_path = os.path.join(pkg_share, 'urdf/dynamixel_arm.xacro')
+    default_model_path = os.path.join(pkg_share, 'urdf/dynamixel_arm_sim.urdf')
     default_rviz_config_path = os.path.join(pkg_share, 'config/display.rviz')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
