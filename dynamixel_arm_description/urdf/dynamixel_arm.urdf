@@ -366,6 +366,8 @@
     </collision>
   </link>
 
+  <link name="end_effector"/>
+
   <!-- Joints -->
   <joint name="joint1" type="revolute">
     <origin rpy="0 0 0" xyz="-0.000245 4.5e-05 0.1003"/>
@@ -458,6 +460,12 @@
     <axis xyz="1 0 0"/>
     <limit effort="100" lower="-0.383972" upper="0.575959" velocity="100"/>
     <mimic joint="gripper" multiplier="-1.0" offset="0.0"/>
+  </joint>
+
+  <joint name="end_effector_frame" type="fixed">
+    <parent link="link_5_1"/>
+    <child link="end_effector"/>
+    <origin xyz="0.0226 0.01194171505988 0.24098628193808" rpy="0 0 0"/>
   </joint>
   
   <ros2_control name="RebotArmHardwareInterface" type="system">

@@ -60,7 +60,7 @@ class JointControlGUI(QMainWindow):
             ('joint3', -1.57, 1.57, 0.0),
             ('joint4', -3.14, 3.14, 0.0),
             ('joint5', -1.57, 1.57, 0.0),
-            ('gripper', -0.57, 0.38, 0.0)
+            ('gripper', -0.57595, 0.38397, 0.0)
         ]
 
         self.sliders = []
