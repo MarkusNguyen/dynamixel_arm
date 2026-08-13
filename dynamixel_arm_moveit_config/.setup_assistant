@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: dynamixel_arm_description
+    relative_path: urdf/dynamixel_arm.urdf
+  srdf:
+    relative_path: config/dynamixel_arm.srdf
+  package_settings:
+    author_name: MarkusNguyen
+    author_email: 11525061@student.vgu.edu.vn
+    generated_timestamp: 1786620553

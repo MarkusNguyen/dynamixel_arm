@@ -61,6 +61,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    gripper_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['gripper_controller', '--controller-manager', '/controller_manager'],
+        output='screen'
+    )
+
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -76,4 +83,5 @@ def generate_launch_description():
         joint_state_broadcaster_spawner,
         arm_controller_spawner,
         rviz_node,
+        gripper_controller_spawner
     ])
