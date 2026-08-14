@@ -54,8 +54,8 @@ joint_limits:
 
   gripper:
     has_position_limits: true
-    min_position: -0.60
-    max_position: 0.40
+    min_position: -65.5269905 # Gripper Multiplier
+    max_position: 94.98867187
     has_velocity_limits: true
     max_velocity: 1.0
     has_acceleration_limits: true

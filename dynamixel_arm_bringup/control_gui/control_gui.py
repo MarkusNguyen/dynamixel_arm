@@ -8,13 +8,14 @@ from rclpy.action import ActionClient
 from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import JointState
 from builtin_interfaces.msg import Duration
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QSlider, QDoubleSpinBox, QPushButton, QGroupBox, QTabWidget
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 
 class ArmControllerNode(Node):
@@ -31,15 +32,31 @@ class ArmControllerNode(Node):
             '/gripper_controller/follow_joint_trajectory'
         )
 
+        # Joint State Subscriber
+        self.current_gripper_pos = 0.0
+        self.joint_state_sub = self.create_subscription(
+            JointState,
+            '/joint_states',
+            self.joint_state_callback,
+            10
+        )
+
         # Cartesian topic publisher for MoveTrajectory node
         self.xyz_pub = self.create_publisher(Point, '/target_xyz', 10)
 
         self.arm_joints = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5']
         self.gripper_joints = ['gripper']
 
-    def send_trajectory(self, client, joints, positions, time_sec):
+    def joint_state_callback(self, msg: JointState):
+        """Updates current position of the gripper directly from /joint_states."""
+        if 'gripper' in msg.name:
+            idx = msg.name.index('gripper')
+            if idx < len(msg.position):
+                self.current_gripper_pos = float(msg.position[idx])
+
+    def send_trajectory(self, client, joints, positions, velocities=None, time_sec=1.0):
         if not client.wait_for_server(timeout_sec=0.5):
-            self.get_logger().error('Action server not available')
+            self.get_logger().error(f'Action server for {joints} not available')
             return
 
         sec = int(time_sec)
@@ -50,8 +67,11 @@ class ArmControllerNode(Node):
 
         point = JointTrajectoryPoint()
         point.positions = [float(p) for p in positions]
-        point.time_from_start = Duration(sec=sec, nanosec=nsec)
+        
+        if velocities is not None:
+            point.velocities = [float(v) for v in velocities]
 
+        point.time_from_start = Duration(sec=sec, nanosec=nsec)
         traj.points.append(point)
 
         goal = FollowJointTrajectory.Goal()
@@ -59,12 +79,16 @@ class ArmControllerNode(Node):
 
         client.send_goal_async(goal)
 
-    def send_commands(self, arm_pos, gripper_pos, time_sec):
+    def send_arm_command(self, arm_pos, time_sec):
         self.send_trajectory(
-            self.arm, self.arm_joints, arm_pos, time_sec
+            self.arm, self.arm_joints, arm_pos, time_sec=time_sec
         )
+
+    def send_gripper_command(self, gripper_pos, time_sec):
         self.send_trajectory(
-            self.gripper, self.gripper_joints, gripper_pos, time_sec
+            self.gripper, self.gripper_joints, 
+            positions=[gripper_pos], 
+            time_sec=time_sec
         )
 
     def send_target_xyz(self, x: float, y: float, z: float):
@@ -80,13 +104,13 @@ class JointControlGUI(QMainWindow):
     def __init__(self, node):
         super().__init__()
         self.node = node
-        self.setWindowTitle('Dynamixel Arm Controller (XYZ & Joint)')
-        self.setMinimumWidth(580)
+        self.setWindowTitle('Dynamixel Arm Controller (XYZ, Joint & Gripper Velocity)')
+        self.setMinimumWidth(600)
 
         main_layout = QVBoxLayout()
         tabs = QTabWidget()
 
-        # ==================== TAB 1: CARTESIAN (XYZ) ARROW CONTROL ====================
+        # ==================== TAB 1: CARTESIAN (XYZ) CONTROL ====================
         xyz_tab = QWidget()
         xyz_layout = QVBoxLayout()
 
@@ -99,7 +123,7 @@ class JointControlGUI(QMainWindow):
         
         self.xyz_step_spin = QDoubleSpinBox()
         self.xyz_step_spin.setRange(0.001, 0.100)
-        self.xyz_step_spin.setValue(0.010)  # Default 1 cm step
+        self.xyz_step_spin.setValue(0.010)
         self.xyz_step_spin.setSingleStep(0.005)
         self.xyz_step_spin.setDecimals(3)
         self.xyz_step_spin.setFixedWidth(100)
@@ -109,7 +133,6 @@ class JointControlGUI(QMainWindow):
         xyz_grid.addLayout(step_row)
 
         self.xyz_spinboxes = {}
-        # Format: (axis, min, max, default, neg_label, pos_label)
         cart_config = [
             ('X', -0.5, 0.5, 0.0, '◄ Back (-X)', 'Forward (+X) ►'),
             ('Y', -0.5, 0.5, 0.0, '◄ Right (-Y)', 'Left (+Y) ►'),
@@ -132,7 +155,6 @@ class JointControlGUI(QMainWindow):
             btn_minus = QPushButton(neg_label)
             btn_plus = QPushButton(pos_label)
 
-            # Button click callbacks using current step size
             btn_minus.clicked.connect(lambda _, s=spin: s.setValue(s.value() - self.xyz_step_spin.value()))
             btn_plus.clicked.connect(lambda _, s=spin: s.setValue(s.value() + self.xyz_step_spin.value()))
 
@@ -147,7 +169,6 @@ class JointControlGUI(QMainWindow):
 
         # Action Buttons for XYZ
         xyz_buttons = QHBoxLayout()
-
         btn_send_xyz = QPushButton('Send XYZ Target')
         btn_send_xyz.setStyleSheet("background-color: #2b7cff; color: white; font-weight: bold; padding: 6px;")
         btn_send_xyz.clicked.connect(self.send_xyz)
@@ -162,25 +183,25 @@ class JointControlGUI(QMainWindow):
         xyz_tab.setLayout(xyz_layout)
         tabs.addTab(xyz_tab, "Cartesian (XYZ)")
 
-        # ==================== TAB 2: JOINT POSITIONS CONTROL ====================
+        # ==================== TAB 2: JOINT & GRIPPER CONTROL ====================
         joint_tab = QWidget()
         joint_layout = QVBoxLayout()
 
-        group = QGroupBox('Joint Positions (rad)')
-        joints_layout = QVBoxLayout()
+        # 1. Arm Joints Group
+        arm_group = QGroupBox('Arm Joint Positions (rad)')
+        arm_joints_layout = QVBoxLayout()
 
-        self.config = [
+        self.arm_config = [
             ('joint1', -3.14, 3.14, 0.0),
             ('joint2', -1.57, 1.57, 0.0),
             ('joint3', -1.57, 1.57, 0.0),
             ('joint4', -3.14, 3.14, 0.0),
-            ('joint5', -1.57, 1.57, 0.0),
-            ('gripper', -0.57595, 0.38397, 0.0)
+            ('joint5', -1.57, 1.57, 0.0)
         ]
 
-        self.spinboxes = []
+        self.arm_spinboxes = []
 
-        for name, mn, mx, default in self.config:
+        for name, mn, mx, default in self.arm_config:
             row = QHBoxLayout()
             label = QLabel(name)
             label.setFixedWidth(70)
@@ -196,54 +217,121 @@ class JointControlGUI(QMainWindow):
             spin.setValue(default)
             spin.setFixedWidth(80)
 
-            spin.valueChanged.connect(
-                lambda v, s=slider: s.setValue(round(v * 100))
-            )
-            slider.valueChanged.connect(
-                lambda v, s=spin: s.setValue(v / 100)
-            )
+            spin.valueChanged.connect(lambda v, s=slider: s.setValue(round(v * 100)))
+            slider.valueChanged.connect(lambda v, s=spin: s.setValue(v / 100.0))
 
-            self.spinboxes.append(spin)
+            self.arm_spinboxes.append(spin)
 
             row.addWidget(label)
             row.addWidget(slider)
             row.addWidget(spin)
-            joints_layout.addLayout(row)
+            arm_joints_layout.addLayout(row)
 
-        group.setLayout(joints_layout)
-        joint_layout.addWidget(group)
+        arm_time_row = QHBoxLayout()
+        arm_time_row.addWidget(QLabel('Arm Trajectory Duration (s):'))
+        self.arm_time = QDoubleSpinBox()
+        self.arm_time.setRange(0.5, 10.0)
+        self.arm_time.setValue(4.0)
+        self.arm_time.setSingleStep(0.5)
+        self.arm_time.setDecimals(1)
+        self.arm_time.setFixedWidth(80)
+        arm_time_row.addWidget(self.arm_time)
+        arm_time_row.addStretch()
 
-        # Joint Movement Time Settings
-        time_row = QHBoxLayout()
-        time_row.addWidget(QLabel('Trajectory Movement Duration (s):'))
+        arm_joints_layout.addLayout(arm_time_row)
+        arm_group.setLayout(arm_joints_layout)
+        joint_layout.addWidget(arm_group)
 
-        self.time = QDoubleSpinBox()
-        self.time.setRange(0.5, 10.0)
-        self.time.setValue(4.0)  # Default 4.0s duration per command
-        self.time.setSingleStep(0.5)
-        self.time.setDecimals(1)
-        self.time.setFixedWidth(80)
+        # 2. Gripper Group (Velocity Command Interface)
+        gripper_group = QGroupBox('Gripper Control (Theta & Velocity)')
+        gripper_layout = QVBoxLayout()
 
-        time_row.addWidget(self.time)
-        time_row.addStretch()
-        joint_layout.addLayout(time_row)
+        # Gripper Theta Control (-65.5269905 to 94.98867187 rad)
+        g_theta_row = QHBoxLayout()
+        g_theta_row.addWidget(QLabel('Theta (rad):'))
+        
+        self.gripper_spin = QDoubleSpinBox()
+        self.gripper_spin.setRange(-65.5269905, 94.98867187) # Gripper Multiplier
+        self.gripper_spin.setValue(0.0)
+        self.gripper_spin.setSingleStep(0.1)
+        self.gripper_spin.setDecimals(3)
+        self.gripper_spin.setFixedWidth(100)
 
-        # Joint Control Buttons
+        self.gripper_slider = QSlider(Qt.Horizontal)
+        self.gripper_slider.setRange(int(-65.5269905 * 1000), int(94.98867187 * 1000)) # Gripper Multiplier
+        self.gripper_slider.setValue(0)
+
+        self.gripper_spin.valueChanged.connect(
+            lambda v: self.gripper_slider.setValue(round(v * 1000))
+        )
+        self.gripper_slider.valueChanged.connect(
+            lambda v: self.gripper_spin.setValue(v / 1000.0)
+        )
+        self.gripper_spin.valueChanged.connect(self.update_gripper_duration_info)
+
+        g_theta_row.addWidget(self.gripper_slider)
+        g_theta_row.addWidget(self.gripper_spin)
+        gripper_layout.addLayout(g_theta_row)
+
+        # Gripper Velocity Control (0.01 to 10.0 rad/s)
+        g_vel_row = QHBoxLayout()
+        g_vel_row.addWidget(QLabel('Velocity (rad/s):'))
+
+        self.gripper_vel_spin = QDoubleSpinBox()
+        self.gripper_vel_spin.setRange(0.01, 10.0)
+        self.gripper_vel_spin.setValue(2.0)
+        self.gripper_vel_spin.setSingleStep(0.2)
+        self.gripper_vel_spin.setDecimals(2)
+        self.gripper_vel_spin.setFixedWidth(100)
+
+        self.gripper_vel_slider = QSlider(Qt.Horizontal)
+        self.gripper_vel_slider.setRange(1, 1000)  # 0.01 to 10.00
+        self.gripper_vel_slider.setValue(200)
+
+        self.gripper_vel_spin.valueChanged.connect(
+            lambda v: self.gripper_vel_slider.setValue(round(v * 100))
+        )
+        self.gripper_vel_slider.valueChanged.connect(
+            lambda v: self.gripper_vel_spin.setValue(v / 100.0)
+        )
+        self.gripper_vel_spin.valueChanged.connect(self.update_gripper_duration_info)
+
+        g_vel_row.addWidget(self.gripper_vel_slider)
+        g_vel_row.addWidget(self.gripper_vel_spin)
+        gripper_layout.addLayout(g_vel_row)
+
+        # Dynamic feedback & duration label
+        self.gripper_dur_label = QLabel('Current Theta: 0.000 rad | Est. Duration: 0.50 s')
+        self.gripper_dur_label.setStyleSheet("color: #333333; font-weight: bold;")
+        gripper_layout.addWidget(self.gripper_dur_label)
+
+        gripper_group.setLayout(gripper_layout)
+        joint_layout.addWidget(gripper_group)
+
+        # Action Buttons
         buttons = QHBoxLayout()
 
-        btn_send_joints = QPushButton('Send Joint Target')
-        btn_send_joints.setStyleSheet("background-color: #2b7cff; color: white; font-weight: bold; padding: 6px;")
-        btn_send_joints.clicked.connect(self.send_joint_target)
+        btn_send_arm = QPushButton('Send Arm Only')
+        btn_send_arm.clicked.connect(self.send_arm_target)
 
-        home = QPushButton('Reset Joints to Home')
+        btn_send_gripper = QPushButton('Send Gripper Only')
+        btn_send_gripper.clicked.connect(self.send_gripper_target)
+
+        btn_send_all = QPushButton('Send All Targets')
+        btn_send_all.setStyleSheet("background-color: #2b7cff; color: white; font-weight: bold; padding: 6px;")
+        btn_send_all.clicked.connect(self.send_all_targets)
+
+        home = QPushButton('Reset Home')
         home.clicked.connect(self.home)
 
-        buttons.addWidget(btn_send_joints)
+        buttons.addWidget(btn_send_arm)
+        buttons.addWidget(btn_send_gripper)
+        buttons.addWidget(btn_send_all)
         buttons.addWidget(home)
         joint_layout.addLayout(buttons)
 
         joint_tab.setLayout(joint_layout)
-        tabs.addTab(joint_tab, "Joint Control")
+        tabs.addTab(joint_tab, "Joint & Gripper Control")
 
         # Set central widget
         main_layout.addWidget(tabs)
@@ -251,9 +339,25 @@ class JointControlGUI(QMainWindow):
         widget.setLayout(main_layout)
         self.setCentralWidget(widget)
 
+        # Periodic timer (100 ms) to refresh real-time position from /joint_states
+        self.gui_timer = QTimer(self)
+        self.gui_timer.timeout.connect(self.update_gripper_duration_info)
+        self.gui_timer.start(100)
+
+    # --- Calculation Helpers ---
+    def update_gripper_duration_info(self):
+        target_theta = self.gripper_spin.value()
+        velocity = max(0.01, self.gripper_vel_spin.value())
+        current_pos = self.node.current_gripper_pos
+        delta_theta = abs(target_theta - current_pos)
+        duration = max(0.1, delta_theta / velocity) if delta_theta > 1e-4 else 0.5
+        
+        self.gripper_dur_label.setText(
+            f'Current Theta: {current_pos:.3f} rad | Est. Duration: {duration:.2f} s'
+        )
+
     # --- XYZ Control Methods ---
     def send_xyz(self):
-        """Sends XYZ coordinate goal to MoveTrajectory node via /target_xyz topic once."""
         x = self.xyz_spinboxes['X'].value()
         y = self.xyz_spinboxes['Y'].value()
         z = self.xyz_spinboxes['Z'].value()
@@ -264,20 +368,32 @@ class JointControlGUI(QMainWindow):
         for axis, default in defaults.items():
             self.xyz_spinboxes[axis].setValue(default)
 
-    # --- Joint Control Methods ---
-    def send_joint_target(self):
-        """Sends joint command once on demand."""
-        duration = self.time.value()
-        pos = [s.value() for s in self.spinboxes]
-        self.node.send_commands(
-            pos[:5],
-            pos[5:],
-            duration
-        )
+    # --- Joint & Gripper Control Methods ---
+    def send_arm_target(self):
+        arm_pos = [s.value() for s in self.arm_spinboxes]
+        duration = self.arm_time.value()
+        self.node.send_arm_command(arm_pos, duration)
+
+    def send_gripper_target(self):
+        target_theta = self.gripper_spin.value()
+        velocity = self.gripper_vel_spin.value()
+        current_pos = self.node.current_gripper_pos
+        delta_theta = abs(target_theta - current_pos)
+        
+        # Calculate duration based on distance from real-time current position
+        duration = max(0.2, delta_theta / max(velocity, 0.01)) if delta_theta > 1e-4 else 0.5
+        
+        self.node.send_gripper_command(target_theta, duration)
+
+    def send_all_targets(self):
+        self.send_arm_target()
+        self.send_gripper_target()
 
     def home(self):
-        for i, (_, _, _, default) in enumerate(self.config):
-            self.spinboxes[i].setValue(default)
+        for i, (_, _, _, default) in enumerate(self.arm_config):
+            self.arm_spinboxes[i].setValue(default)
+        self.gripper_spin.setValue(0.0)
+        self.gripper_vel_spin.setValue(2.0)
 
     def closeEvent(self, event):
         if rclpy.ok():

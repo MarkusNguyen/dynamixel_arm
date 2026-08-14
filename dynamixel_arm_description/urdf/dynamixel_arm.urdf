@@ -367,6 +367,7 @@
   </link>
 
   <link name="end_effector"/>
+  <link name="gripper_link"/>
 
   <!-- Joints -->
   <joint name="joint1" type="revolute">
@@ -409,12 +410,15 @@
     <limit effort="100" lower="-1.570796" upper="1.570796" velocity="100"/>
   </joint>
 
-  <joint name="gripper" type="revolute">
+<!-- ======= Gripper Joints ======= -->
+
+  <joint name="outlink2" type="revolute">
     <origin rpy="0 0 0" xyz="0.0313 -0.029351 0.106414"/>
     <parent link="link_5_1"/>
     <child link="linkout_1_1"/>
     <axis xyz="-1 0 0"/>
     <limit effort="100" lower="-0.575959" upper="0.383972" velocity="100"/>
+    <mimic joint="gripper" multiplier="0.05" offset="0.006"/> <!-- Gripper Multiplier --> 
   </joint>
 
   <joint name="inlink2" type="revolute">
@@ -423,25 +427,7 @@
     <child link="linkin_1_1"/>
     <axis xyz="-1 0 0"/>
     <limit effort="100" lower="-0.575959" upper="0.383972" velocity="100"/>
-    <mimic joint="gripper" multiplier="1.0" offset="0.0"/>
-  </joint>
-
-  <joint name="outlink1" type="revolute">
-    <origin rpy="0 0 0" xyz="0.0313 0.052649 0.106375"/>
-    <parent link="link_5_1"/>
-    <child link="linkout_2_1"/>
-    <axis xyz="-1 0 0"/>
-    <limit effort="100" lower="-0.383972" upper="0.575959" velocity="100"/>
-    <mimic joint="gripper" multiplier="-1.0" offset="0.0"/>
-  </joint>
-
-  <joint name="inlink1" type="revolute">
-    <origin rpy="0 0 0" xyz="0.0313 0.033649 0.106384"/>
-    <parent link="link_5_1"/>
-    <child link="linkin_2_1"/>
-    <axis xyz="-1 0 0"/>
-    <limit effort="100" lower="-0.383972" upper="0.575959" velocity="100"/>
-    <mimic joint="gripper" multiplier="-1.0" offset="0.0"/>
+    <mimic joint="gripper" multiplier="0.05" offset="0.006"/> <!-- Gripper Multiplier --> 
   </joint>
 
   <joint name="outlink2_upper" type="revolute">
@@ -450,7 +436,25 @@
     <child link="fin_2_1"/>
     <axis xyz="1 0 0"/>
     <limit effort="100" lower="-0.575959" upper="0.383972" velocity="100"/>
-    <mimic joint="gripper" multiplier="1.0" offset="0.0"/>
+    <mimic joint="gripper" multiplier="0.05" offset="0.006"/> <!-- Gripper Multiplier --> 
+  </joint>
+
+  <joint name="outlink1" type="revolute">
+    <origin rpy="0 0 0" xyz="0.0313 0.052649 0.106375"/>
+    <parent link="link_5_1"/>
+    <child link="linkout_2_1"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="100" lower="-0.383972" upper="0.575959" velocity="100"/>
+    <mimic joint="gripper" multiplier="-0.05" offset="0.006"/> <!-- Gripper Multiplier --> 
+  </joint>
+
+  <joint name="inlink1" type="revolute">
+    <origin rpy="0 0 0" xyz="0.0313 0.033649 0.106384"/>
+    <parent link="link_5_1"/>
+    <child link="linkin_2_1"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="100" lower="-0.383972" upper="0.575959" velocity="100"/>
+    <mimic joint="gripper" multiplier="-0.05" offset="0.006"/> <!-- Gripper Multiplier --> 
   </joint>
 
   <joint name="outlink1_upper" type="revolute">
@@ -459,7 +463,15 @@
     <child link="fin_1_1"/>
     <axis xyz="1 0 0"/>
     <limit effort="100" lower="-0.383972" upper="0.575959" velocity="100"/>
-    <mimic joint="gripper" multiplier="-1.0" offset="0.0"/>
+    <mimic joint="gripper" multiplier="-0.05" offset="0.006"/> <!-- Gripper Multiplier --> 
+  </joint>
+
+  <joint name="gripper" type="revolute">
+    <origin xyz="0.0226 0.01194171505988 0.24098628193808" rpy="0 0 0"/>
+    <parent link="link_5_1"/>
+    <child link="gripper_link"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="100" lower="-65.5269905" upper="94.98867187" velocity="10.0"/> <!-- Gripper Multiplier --> 
   </joint>
 
   <joint name="end_effector_frame" type="fixed">
@@ -519,7 +531,7 @@
 
     <joint name="gripper">
         <param name="id">6</param>
-        <param name="control_mode">position</param> 
+        <param name="control_mode">extended_position</param> 
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>

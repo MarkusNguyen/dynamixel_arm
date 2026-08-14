@@ -20,6 +20,7 @@
     <virtual_joint name="base_link" type="fixed" parent_frame="world" child_link="base_link"/>
 
     <!-- PASSIVE JOINTS -->
+    <passive_joint name="outlink2"/>
     <passive_joint name="outlink2_upper"/>
     <passive_joint name="inlink1"/>
     <passive_joint name="inlink2"/>

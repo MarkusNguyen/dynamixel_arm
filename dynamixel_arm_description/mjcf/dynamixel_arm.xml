@@ -9,14 +9,15 @@
   </default>
   
   <equality>
-    <!-- Multiplier = 1.0 -->
-    <joint joint1="inlink2" joint2="gripper" polycoef="0 1 0 0 0"/>
-    <joint joint1="outlink2_upper" joint2="gripper" polycoef="0 1 0 0 0"/>
+    <!-- Gripper Multiplier --> 
+    <joint joint1="outlink2" joint2="gripper" polycoef="0 0.006 0 0 0"/>
+    <joint joint1="inlink2" joint2="gripper" polycoef="0 0.006 0 0 0"/>
+    <joint joint1="outlink2_upper" joint2="gripper" polycoef="0 0.006 0 0 0"/>
 
-    <!-- Multiplier = -1.0 -->
-    <joint joint1="outlink1" joint2="gripper" polycoef="0 -1 0 0 0"/>
-    <joint joint1="inlink1" joint2="gripper" polycoef="0 -1 0 0 0"/>
-    <joint joint1="outlink1_upper" joint2="gripper" polycoef="0 -1 0 0 0"/>
+    <!-- Gripper Multiplier --> 
+    <joint joint1="outlink1" joint2="gripper" polycoef="0 -0.006 0 0 0"/>
+    <joint joint1="inlink1" joint2="gripper" polycoef="0 -0.006 0 0 0"/>
+    <joint joint1="outlink1_upper" joint2="gripper" polycoef="0 -0.006 0 0 0"/>
   </equality>
 
   <asset>
@@ -56,9 +57,15 @@
               <inertial pos="0.0224751 0.00327341 0.0595492" quat="0.991497 -0.129987 0.00525098 0.00296856" mass="0.125379" diaginertia="0.000159147 0.000132758 6.40726e-05"/>
               <joint name="joint5" pos="0 0 0" axis="-1 0 0" range="-1.5708 1.5708" actuatorfrcrange="-100 100"/>
               <geom pos="0.023045 0.011405 -0.421518" quat="1 0 0 0" type="mesh" rgba="0.74902 0.74902 0.74902 1" mesh="link_5_1"/>
+              
+              <body name="gripper_link" pos="0.0226 0.011942 0.240986">
+                <inertial pos="0 0 0" mass="0.01" diaginertia="1e-05 1e-05 1e-05"/>
+                <joint name="gripper" pos="0 0 0" axis="0 0 1" limited="true" range="-65.5269905 94.98867187" actuatorfrcrange="-100 100"/> <!-- Gripper Multiplier --> 
+              </body>
+
               <body name="linkout_1_1" pos="0.0313 -0.029351 0.106414">
                 <inertial pos="-0.00874972 1.01774e-05 0.021282" quat="0.707107 -0.000163677 0.000163677 0.707107" mass="0.010668" diaginertia="2.51807e-06 1.66185e-06 1.04143e-06"/>
-                <joint name="gripper" pos="0 0 0" axis="-1 0 0" range="-0.575959 0.383972" actuatorfrcrange="-100 100"/>
+                <joint name="outlink2" pos="0 0 0" axis="-1 0 0" range="-0.575959 0.383972" actuatorfrcrange="-100 100"/>
                 <geom pos="-0.008255 0.040756 -0.527932" quat="1 0 0 0" type="mesh" rgba="0.921569 0.921569 0.921569 1" mesh="linkout_1_1"/>
                 <body name="fin_2_1" pos="0 2.1e-05 0.045">
                   <inertial pos="-0.00869972 0.0111368 0.0258989" quat="0.998385 -0.0568136 0 0" mass="0.0281716" diaginertia="1.75973e-05 1.73283e-05 3.04432e-06"/>
@@ -99,6 +106,6 @@
     <position name="joint3" joint="joint3" kp="400" kv="12" ctrlrange="-1.5708 1.5708" forcerange="-25 25"/>
     <position name="joint4" joint="joint4" kp="200" kv="8" ctrlrange="-3.14159 3.14159" forcerange="-15 15"/>
     <position name="joint5" joint="joint5" kp="150" kv="5" ctrlrange="-1.5708 1.5708" forcerange="-10 10"/>
-    <position name="gripper" joint="gripper" kp="100" kv="3" ctrlrange="-0.575959 0.383972" forcerange="-10 10"/>
+    <position name="gripper" joint="gripper" kp="100" kv="3" ctrlrange="-65.5269905 94.98867187" forcerange="-10 10"/> <!-- Gripper Multiplier --> 
   </actuator>
 </mujoco>
