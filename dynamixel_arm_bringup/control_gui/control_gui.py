@@ -219,7 +219,7 @@ class JointControlGUI(QMainWindow):
 
         self.time = QDoubleSpinBox()
         self.time.setRange(0.5, 10.0)
-        self.time.setValue(2.0)  # Default 3.0s duration per command
+        self.time.setValue(4.0)  # Default 4.0s duration per command
         self.time.setSingleStep(0.5)
         self.time.setDecimals(1)
         self.time.setFixedWidth(80)
