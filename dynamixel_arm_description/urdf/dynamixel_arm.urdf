@@ -468,11 +468,13 @@
     <origin xyz="0.0226 0.01194171505988 0.24098628193808" rpy="0 0 0"/>
   </joint>
   
-  <ros2_control name="RebotArmHardwareInterface" type="system">
+  <ros2_control name="DynamixelArmHardwareInterface" type="system">
     <hardware>
         <plugin>dynamixel_hardware/DynamixelHardware</plugin>
+        <param name="usb_port">/dev/ttyUSB0</param>
         <param name="port_name">/dev/ttyUSB0</param>
         <param name="baud_rate">1000000</param>
+        <param name="use_dummy">false</param>
     </hardware>
 
     <joint name="joint1">
