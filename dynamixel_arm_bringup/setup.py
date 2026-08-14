@@ -1,8 +1,12 @@
+import os
 from setuptools import find_packages, setup
 from glob import glob
 
-
 package_name = 'dynamixel_arm_bringup'
+
+for script in glob('motion/*'):
+    if os.path.isfile(script):
+        os.chmod(script, 0o755)
 
 setup(
     name=package_name,
@@ -14,6 +18,10 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', glob('config/*')),
         ('share/' + package_name + '/launch', glob('launch/*')),
+        ('share/' + package_name + '/motion', glob('motion/*')),
+        ('share/' + package_name + '/control_gui', glob('control_gui/*')),
+
+        (os.path.join('lib', package_name), glob('motion/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -28,7 +36,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'move_trajectory = dynamixel_arm_bringup.move_trajectory:main'
+            'control_gui = control_gui.control_gui:main'
         ],
     },
 )
