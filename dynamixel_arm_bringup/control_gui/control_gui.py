@@ -111,9 +111,9 @@ class JointControlGUI(QMainWindow):
         self.xyz_spinboxes = {}
         # Format: (axis, min, max, default, neg_label, pos_label)
         cart_config = [
-            ('X', -0.40, 0.40, 0.15, '◄ Back (-X)', 'Forward (+X) ►'),
-            ('Y', -0.40, 0.40, 0.00, '◄ Right (-Y)', 'Left (+Y) ►'),
-            ('Z', -0.10, 0.40, 0.15, '◄ Down (-Z)', 'Up (+Z) ►')
+            ('X', -0.5, 0.5, 0.0, '◄ Back (-X)', 'Forward (+X) ►'),
+            ('Y', -0.5, 0.5, 0.0, '◄ Right (-Y)', 'Left (+Y) ►'),
+            ('Z', 0.00, 0.67, 0.67, '◄ Down (-Z)', 'Up (+Z) ►')
         ]
 
         for axis, mn, mx, default, neg_label, pos_label in cart_config:
@@ -260,7 +260,7 @@ class JointControlGUI(QMainWindow):
         self.node.send_target_xyz(x, y, z)
 
     def reset_xyz(self):
-        defaults = {'X': 0.15, 'Y': 0.00, 'Z': 0.15}
+        defaults = {'X': 0.0, 'Y': 0.0, 'Z': 0.67}
         for axis, default in defaults.items():
             self.xyz_spinboxes[axis].setValue(default)
 
