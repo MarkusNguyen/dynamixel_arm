@@ -1,0 +1,6 @@
+1. Launch Mujoco Sim:
+- ros2 launch dynamixel_arm_bringup dynamixel_arm_sim.launch.py
+2. Run Control GUI:
+- ros2 run dynamixel_arm_bringup control_gui
+3. Launch MoveIt 2
+ros2 launch dynamixel_arm_moveit_config dynamixel_arm_moveit_sim.launch.py
