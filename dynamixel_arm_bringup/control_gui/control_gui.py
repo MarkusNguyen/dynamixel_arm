@@ -231,7 +231,7 @@ class JointControlGUI(QMainWindow):
         arm_time_row.addWidget(QLabel('Arm Trajectory Duration (s):'))
         self.arm_time = QDoubleSpinBox()
         self.arm_time.setRange(0.5, 10.0)
-        self.arm_time.setValue(4.0)
+        self.arm_time.setValue(8.0)
         self.arm_time.setSingleStep(0.5)
         self.arm_time.setDecimals(1)
         self.arm_time.setFixedWidth(80)
